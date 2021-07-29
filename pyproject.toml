@@ -1,0 +1,11 @@
+[build-system]
+requires = ["flit_core >=2,<4", "sklearn", "tqdm", "pandas", "matplotlib"]
+build-backend = "flit_core.buildapi"
+
+[tool.flit.metadata]
+module = "lockout"
+author = "Wilmer Arbelo"
+author-email = "wilmer.arbelogonzalez@ucsf.edu"
+home-page = "https://github.com/warbelo/Lockout"
+description-file = "README.md"
+
