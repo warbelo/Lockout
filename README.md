@@ -13,9 +13,6 @@ pip install lockout
 ```
 import torch
 from lockout import Lockout
-
-model = torch.nn.Linear(4, 2)
-lockout_unconstraint = Lockout(model, lr=5e-3)   
 ...  
 ```
 
