@@ -6,7 +6,7 @@ Sparsity Inducing Regularization of Fully Connected Neural Networks
 ## Install
 
 ```
-pip install lockout
+pip install lockout [-- upgrade]
 ```
 
 ## Usage
