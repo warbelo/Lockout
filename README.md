@@ -16,7 +16,6 @@ pip install lockout
 ```
 import torch
 from lockout import Lockout
-<<<<<<< HEAD
 ```
 
 ### 2. Neural Network Architecture
