@@ -9,14 +9,17 @@ pip install lockout
 ```
 
 ## Usage
+[`PyTorch`](https://pytorch.org/) installation required.  
 
+
+### 1. Import Lockout (and PyTorch)
 ```
 import torch
 from lockout import Lockout
+```
 
-model = torch.nn.Linear(4, 2)
-lockout_unconstraint = Lockout(model, lr=5e-3)   
-...  
+### 2. Neural Network Architecture
+```
 ```
 
 ## Paper

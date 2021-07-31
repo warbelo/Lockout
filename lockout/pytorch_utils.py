@@ -13,6 +13,35 @@ from sklearn.preprocessing import StandardScaler
 
 
 # ==================================================================================================
+class FCNN(nn.Module):
+    def __init__(self, n_features, layer_sizes):
+        """
+        Input:
+        - n_features:  number of input features (integer)
+        - layer_sizes: nodes per layers (list of integers)
+
+        Output:
+        - Fully Connected Neural Network
+        """
+        super(FCNN, self).__init__()
+        
+        weight_dims   = [int(n_features)] + layer_sizes
+        self.n_layers = len(layer_sizes)
+        self.linear_layers = nn.ModuleList(
+            [nn.Linear(weight_dims[i], weight_dims[i+1]) for i in range(self.n_layers)]
+        )
+        self.relu = nn.ReLU(inplace=True)
+        
+    def forward(self, x):
+        for n, linear_layer in enumerate(self.linear_layers, start=1):
+            x = linear_layer(x)
+            if n != self.n_layers:
+                x = self.relu(x)
+        return x
+
+
+
+# ==================================================================================================
 def weight_reset(model):
     """
     Input:
@@ -59,29 +88,6 @@ def save_model(model, name):
     - name (str or path) of model when saved 
     """
     torch.save(model.state_dict(), name)
-
-
-# ==================================================================================================
-class dataset_tabular(Dataset):
-    '''
-    Input:
-    - X values (xtensor) as a 2D torch tensor with dimension 
-      [# of points, # of features]
-    - Y values (ytensor) as a 1D torch tensor with dimension 
-      [# of points]
-      
-    Output:
-    - Torch Dataset for tabular data with a single output
-    '''
-    def __init__(self, xtensor, ytensor):
-        self.x = xtensor
-        self.y = ytensor
-    
-    def __len__(self):
-        return len(self.y)
-
-    def __getitem__(self, idx):
-        return self.x[idx,:], self.y[idx], idx
 
 
 # ==================================================================================================
@@ -168,12 +174,13 @@ def load_data_clf(folder):
 def dataset_r2(data_loader, model, device, y_mean=None):
     """
     Input:
-    -data_loader: torch DataLoader previously created
-    -model:       torch model previously trained
-    -device: 'gpu' or 'cpu'
+    - data_loader: torch DataLoader previously created
+    - model:       torch model previously trained
+    - device: 'gpu' or 'cpu'
     
     Output:
-    -R2 score for the given data set
+    - R2 score for the given data set
+    - Mean of Y (dummy output for iterative use)
     """
 # Put model in evaluation mode
     model.eval()
@@ -209,12 +216,12 @@ def dataset_r2(data_loader, model, device, y_mean=None):
 def dataset_accuracy(data_loader, model, device):
     """
     Input:
-    -data_loader: torch DataLoader previously created
-    -model:       torch model previously trained
-    -device: 'gpu' or 'cpu'
+    - data_loader: torch DataLoader previously created
+    - model:       torch model previously trained
+    - device: 'gpu' or 'cpu'
     
     Output:
-    -Accuracy for the given data set
+    - Accuracy for the given data set
     """
 # Put model in evaluation mode
     model.eval()
@@ -261,13 +268,13 @@ def correct_predictions(y_output, y_target):
 def valid_epoch_reg(data_loader, model, loss_type, device):
     """
     Input:
-    -data_loader: torch DataLoader previously created
-    -model:       torch model previously trained
-    -loss_type:   loss function previously created/instantiated
-    -device: 'gpu' or 'cpu'
+    - data_loader: torch DataLoader previously created
+    - model:       torch model previously trained
+    - loss_type:   loss function previously created/instantiated
+    - device: 'gpu' or 'cpu'
     
     Output:
-    -Mean loss function over the entire data set
+    - Mean loss function over the entire data set
     """
 # Put model in evaluation mode
     model.eval()
@@ -295,13 +302,13 @@ def valid_epoch_reg(data_loader, model, loss_type, device):
 def valid_epoch_clf(data_loader, model, loss_type, device):
     """
     Input:
-    -data_loader: torch DataLoader previously created
-    -model:       torch model previously trained
-    -loss_type:   loss function previously created/instantiated
-    -device: 'gpu' or 'cpu'
+    - data_loader: torch DataLoader previously created
+    - model:       torch model previously trained
+    - loss_type:   loss function previously created/instantiated
+    - device: 'gpu' or 'cpu'
     
     Output:
-    -Mean loss function over the entire data set
+    - Mean loss function over the entire data set
     """
 # Put model in evaluation mode
     model.eval()
@@ -326,7 +333,30 @@ def valid_epoch_clf(data_loader, model, loss_type, device):
 
 
 # ==================================================================================================
-def make_DataLoaders(xtrain, xvalid, xtest, ytrain, yvalid, ytest, dataset, 
+class dataset_tabular(Dataset):
+    '''
+    Input:
+    - X values (xtensor) as a 2D torch tensor with dimension 
+      [# of points, # of features]
+    - Y values (ytensor) as a 1D torch tensor with dimension 
+      [# of points]
+      
+    Output:
+    - Torch Dataset for tabular data with a single output
+    '''
+    def __init__(self, xtensor, ytensor):
+        self.x = xtensor
+        self.y = ytensor
+    
+    def __len__(self):
+        return len(self.y)
+
+    def __getitem__(self, idx):
+        return self.x[idx,:], self.y[idx], idx
+
+
+# ==================================================================================================
+def make_DataLoaders(xtrain, xvalid, xtest, ytrain, yvalid, ytest, 
                      batch_size=100000, num_workers = 0):
     """
     Input:
@@ -339,9 +369,9 @@ def make_DataLoaders(xtrain, xvalid, xtest, ytrain, yvalid, ytest, dataset,
     -Torch DataLoaders for training, validation, and testing datasets. 
     """
 # Create datasets
-    train_dataset = dataset(xtrain, ytrain)
-    valid_dataset = dataset(xvalid, yvalid)
-    test_dataset  = dataset(xtest, ytest)
+    train_dataset = dataset_tabular(xtrain, ytrain)
+    valid_dataset = dataset_tabular(xvalid, yvalid)
+    test_dataset  = dataset_tabular(xtest, ytest)
     
 # Create Dataloaders
     train_dataloader = torch.utils.data.DataLoader(train_dataset, 
@@ -372,10 +402,10 @@ def sgn(x):
 def normalize_x(xtrain, xvalid, xtest):
     """
     Input: 
-    -Torch tensors with training, validation, and testing data sets (X only)
+    - Torch tensors with training, validation, and testing data sets (X only)
     
     Output:
-    -Torch tensors with normalized training, validation, and testing 
+    - Torch tensors with normalized training, validation, and testing 
     data sets: xtrain, xvalid, xtest
         X = (X - X_mean)/X_std
     """
@@ -391,12 +421,12 @@ def normalize_x(xtrain, xvalid, xtest):
 def normalize_xy(xtrain, xvalid, xtest, ytrain, yvalid, ytest):
     """
     Input: 
-    -Torch tensors with training, validation, and testing data sets 
-     (X and Y)
+    - Torch tensors with training, validation, and testing data sets 
+      (X and Y)
     
     Output:
-    -Torch tensors with normalized training, validation, and testing 
-    data sets: xtrain, xvalid, xtest, ytrain, yvalid, ytest
+    - Torch tensors with normalized training, validation, and testing 
+      data sets: xtrain, xvalid, xtest, ytrain, yvalid, ytest
         X = (X - X_mean)/X_std
         Y = (Y - Y_mean)/Y_std
     """
@@ -412,4 +442,4 @@ def normalize_xy(xtrain, xvalid, xtest, ytrain, yvalid, ytest):
     y_valid = torch.from_numpy(scaler.transform(yvalid.numpy()))
     y_test = torch.from_numpy(scaler.transform(ytest.numpy()))
     return x_train, x_valid, x_test, y_train, y_valid, y_test
-
+    

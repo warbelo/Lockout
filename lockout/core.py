@@ -3,36 +3,66 @@
 # 
 # This module provides general functions/classes for Lockout
 # --------------------------------------------------------------------------------------------------
-import os
 import copy
-import tqdm
 import warnings
 import torch
 import torch.nn as nn
 import torch.optim as optim
 import pandas as pd
 import numpy as np
+from tqdm import tqdm
 from torch.utils.data import Dataset
 from .pytorch_utils import valid_epoch_clf, valid_epoch_reg, dataset_accuracy, sgn, weight_reset,    \
-                          dataset_r2
+                           dataset_r2
 
 
 # ==================================================================================================
 class Lockout():
     '''
-    Input:
-    -
-    
-    Output:
-    -
+    Sparsity Inducing Regularization of Fully Connected Neural Networks 
     '''
 # INITIALIZE LOCKOUT CLASS
     def __init__(self, input_model, lr=None, loss_type=2, tol_grads=1e-2, beta=0.7, optim_id=1, 
                  regul_type=None, regul_path=None, t0=None, t0_grid=None, t0_points=None, 
                  device=None, optim_params=None, save_weights = (False, None)):
         """
-        - loss_type = 1: nn.MSELoss(reduction='mean')
-        - loss_type = 2: nn.CrossEntropyLoss(reduction='mean')
+        Input:
+        - input_model: input model
+        - lr: learning rate
+        - loss_type: type of loss function:
+                     loss_type = 1: Mean Squared Error
+                     loss_type = 2: Mean Cross Entropy Loss
+        
+        - optim_id: optimizer used.
+                    optim_id = 1: Stochastic Gradient Descend
+                    optim_id = 2: Adam
+
+        - regul_type: list of tuples (or dictionary) of the form [('layer_name', regul_id)] where:
+                      layer_name: layer name (str) in the input model
+                      regul_id = 1: L1 regularization
+                      regul_id = 2: Log regularization (see get_constraint function)
+
+        - regul_path: list of tuples (or dictionary) of the form [('layer_name', path_flg)] where:
+                      layer_name: layer name (str) in the input model
+                      path_flg = True: the constraint t0 will be iteratively changed in this layer.
+                      path_flg = False: the constraint t0 will be kept constant in this layer.
+
+        - t0_grid: list of tuples (or dictionary) of the form [('layer_name', t0_sampled)] where:
+                   layer_name: layer name (str) in the input model
+                   t0_sampled: 1D tensor with the constraint values t0 to be sampled in the
+                                  layer.
+        - t0_points: list of tuples (or dictionary) of the form [('layer_name', t0_number)] where:
+                     layer_name: layer name (str) in the input model
+                     t0_number: number (int) of constraint values t0 to be sampled.
+        
+        - tol_grads: minimum gradients stepsize
+        - beta: hyperparameter used in Logarithmic Regularization
+        - optim_params: optimizer hyperparameters (dict)
+        - device: 'cpu' or 'gpu'
+        - save_weights: tuple of the form ('layer_name', save_flg). It tells lockout whether or 
+                        not to store the weights of a particular layer
+                        layer_name: layer name (str) in the input model
+                        save_flg: True/False to save or not weights
         """
     # .Variables Initialization
         if lr is not None:
@@ -175,13 +205,43 @@ class Lockout():
 
 
 # TRAIN METHOD
-    def train(self, dl_train, dl_valid, dl_test=None, epochs=10000, early_stop=20, tol_loss=1e-5, 
+    def train(self, dl_train, dl_valid, dl_test=None, epochs=10000, early_stopping=20, tol_loss=1e-5, 
               epochs2=None, train_how='until_path', reset_weights = True):
         """
+        Input:
+        - Training, validation, and testing (optional) DataLoaders.
+        - train_how: type of training to be performed. 
+                     The different options are:
+                     1. 'decrease_t0': train the NN using Lockout with a fixed constraint value (t0) 
+                        until the regularization path is found and then iteratively decreases t0.
+                     2. 'sampling_t0': train the NN using Lockout for a discrete set of t0 values 
+                        either given by the user or generated internally.
+                     3. 'constant_t0': train the NN using Lockout with a fixed constraint value (t0)
+                        entered by the user.
+                     4. 'until_path': train the NN using Lockout with a fixed constraint value (t0) 
+                        until the regularization path is found. t0 is computed from the input model.
+                     5. 'unconstrained': train the NN without regularization.
+
+        - epochs: maximum number of epochs during training for:
+                  1. First part of the path in 'train_how = decrease_t0'.
+                  2. First t0 value in 'train_how = sampling_t0'.
+                  3. 'train_how = constant_t0, until_path, & unconstrained'.
+
+        - epochs2: maximum number of epochs during training for:
+                   1. Second part of the path in 'train_how = decrease_t0'.
+                   2. The rest of the t0 values in 'train_how = sampling_t0' except the first one.
+
+        - early_stopping: number of epochs used in the convergence condition.
+        - tol_loss: tolerance in the training loss function used in the convergence condition.
+        - reset_weights: whether or not to use new random weights when 'train_how = unconstrained'.
+
+        Output:
+        - Best (validation) and last models found during training for the chosen 'train_how' option.
+        - DataFrame with path data for the chosen 'train_how' option.
         """
     # .Variables Initialization
         self.__reset_weights = reset_weights
-        self.__early_stop = early_stop
+        self.__early_stop = early_stopping
         self.__tol_loss  = tol_loss
         self.path_data = pd.DataFrame(columns=self.path_data.columns)
         epochs_path1 = epochs
@@ -227,6 +287,8 @@ class Lockout():
             
             self.__train_path2(dl_train, dl_valid, dl_test, epochs_path2)
             self.path_data = self.path_data.append(self.__temp_data, ignore_index=True)
+            if dl_test is None:
+                self.path_data.drop(axis='columns', columns=["test_loss", "test_accu"], inplace=True)
             print("Best validation at iteration = {}".format(self.__best_iter_valid))
             self.model_last = copy.deepcopy(self.__model)
             self.model_best_valid = copy.deepcopy(self.__model_valid_min)
@@ -326,12 +388,12 @@ class Lockout():
                 tmp = pd.Series(self.__t0_points).value_counts()
                 t0_size = tmp.index[0]
                 if len(tmp) != 1:
-                    raise TypeError("'t0_points': Only same number of points per layer is allowed")
+                    raise TypeError("'t0_points': Only same number of points per layer is allowed.")
                 if tmp.index[0] == 1:
-                    raise TypeError("'t0_points': One point per layer is nor allowd. Use a different train_how option instead")
+                    raise TypeError("'t0_points': One point per layer is nor allowd. Use a different 'train_how' option.")
                 tmp = pd.Series(self.__regul_path).value_counts()
                 if tmp[True] != len(self.__t0_points):
-                    raise TypeError("'t0_points': Number of layers to be sampled do not match with t0_points keys")
+                    raise TypeError("'t0_points' and 'regul_path: Number of layers to be sampled do not match.")
 
                 for key in self.__layer_names:
                     if self.__regul_path[key]:
@@ -342,7 +404,7 @@ class Lockout():
                                                  endpoint=True)
                             self.__t0_grid_dict[key] = torch.from_numpy(t0_tmp)
                         else:
-                            raise KeyError("'t0_points': Only layers where regul_path = True are supposed to be sampled")
+                            raise KeyError("'t0_points' and 'regul_path: layer to be sampled does not match.")
 
         # ..When 't0_grid' is given
             if self.__t0_grid is not None:
@@ -354,10 +416,10 @@ class Lockout():
                 if len(tmp) != 1:
                     raise TypeError("'t0_grid': Only same number of points per layer is allowed")
                 if tmp.index[0] == 1:
-                    raise TypeError("'t0_grid': One point per layer is nor allowd. Use a different train_how option instead")
+                    raise TypeError("'t0_grid': One point per layer is nor allowd. Use a different 'train_how' option.")
                 tmp = pd.Series(self.__regul_path).value_counts()
                 if tmp[True] != len(self.__t0_grid):
-                    raise TypeError("'t0_grid': Number of layers to be sampled do not match with t0_points keys")
+                    raise TypeError("'t0_grid' and 'regul_path: Number of layers to be sampled do not match")
 
                 for key in self.__layer_names:
                     if self.__regul_path[key]:
@@ -365,27 +427,37 @@ class Lockout():
                             self.__t0_grid_dict[key] = self.__t0_grid[key]
                             self.__path_t0[key] = self.__t0_grid_dict[key][0]
                         else:
-                            raise KeyError("'t0_grid': Only layers where regul_path = True are supposed to be sampled")
+                            raise KeyError("'t0_grid' and 'regul_path: layer to be sampled does not match.")
 
         # ..Loop over t0 grid
+            best_valid_loss = np.inf
+            n_best = 1
             input_model_flag = True
             self.__optim_id = 1
             self.__optim_params = {}
-            iterator = tqdm.notebook.tqdm(range(1, t0_size + 1), desc='t0')
-            for n in iterator:
+            # iterator = tqdm(range(1, t0_size + 1), desc='t0')
+            for n in range(1, t0_size + 1):
+                print("n = {}".format(n))
                 for key in self.__layer_names:
                     if self.__regul_path[key]:
                         self.__t0_init[key] = self.__t0_grid_dict[key][n-1]
                 self.__train_path1(dl_train, dl_valid, dl_test, epochs_path1, use_input_model=input_model_flag)
                 self.path_data = self.path_data.append(self.__temp_data.tail(1), ignore_index=True)
                 input_model_flag = False
-                print("Early stopping = {} ({})".format(self.__early_stop_flag, self.__last_iter))
+                epochs_path1 = epochs_path2
+                print("Early stopping = {} ({})\n".format(self.__early_stop_flag, self.__last_iter))
                 self.model_last = copy.deepcopy(self.__model)
-                self.model_best_valid = copy.deepcopy(self.__model_valid_min)
-            print("Best validation at iteration = {}".format(self.__best_iter_valid))
-
+                iter_valid_loss = self.path_data.tail(1)['valid_loss'].values
+                if iter_valid_loss < best_valid_loss:
+                    self.model_best_valid = copy.deepcopy(self.__model)
+                    best_valid_loss = iter_valid_loss
+                    n_best = n
+            if dl_test is None:
+                self.path_data.drop(axis='columns', columns=["test_loss", "test_accu"], inplace=True)
+            print("Best validation at iteration = {}".format(n_best))
+ 
     # .Standard Training With Early Stop On Validation Loss
-        elif train_how == 'unconstraint':
+        elif train_how == 'unconstrained':
             if self.__t0_flag:
                 warnings.warn("'t0' is not required for current 'train_how' option")
             
@@ -403,6 +475,8 @@ class Lockout():
             
             self.__train_forward(dl_train, dl_valid, dl_test, epochs_path1)
             self.path_data = self.path_data.append(self.__temp_data, ignore_index=True)
+            if dl_test is None:
+                self.path_data.drop(axis='columns', columns=["test_loss", "test_accu"], inplace=True)
             print("Early stopping = {}".format(self.__early_stop_flag))
             print("Last iteration = {}".format(self.__last_iter))
             print("Best validation at iteration = {}".format(self.__best_iter_valid))
@@ -417,6 +491,15 @@ class Lockout():
 # TRAIN PATH 1
     def __train_path1(self, dl_train, dl_valid, dl_test, epochs, use_input_model=True):
         """
+        Input:
+        - Training, validation, and testing (optional) DataLoaders
+        - Maximum number of epochs
+        - Warm start flag
+
+        Output:
+        - Best (validation) and last models found for a fixed constraint value t0
+        - DataFrame with path data
+        - DataFrame with the weights along the path (if requested)
         """
         n_iterations = epochs*len(dl_train)
         if n_iterations < 1:
@@ -440,7 +523,7 @@ class Lockout():
 
     # .Loop Over Number of Epochs
         iteration = 0
-        iterator = tqdm.notebook.tqdm(range(1, epochs+1), desc='Epochs1')
+        iterator = tqdm(range(1, epochs+1), desc='Epochs1')
         for n_epoch in iterator:
 
         # ..Loop Over Mini-batches
@@ -468,8 +551,7 @@ class Lockout():
                 self.__path_loss['train_loss'] = loss.item()
 
             # ...Store Output data
-                self.__store_output_data(dl_train, dl_valid, dl_test, 
-                                         self.__model, self.__regul_type)
+                self.__store_output_data(dl_train, dl_valid, dl_test, self.__model)
 
             # ...Check For Validation Minimum
                 if self.__path_loss['valid_loss'] < self.__best_loss_valid:
@@ -529,6 +611,14 @@ class Lockout():
 # TRAIN PATH 2
     def __train_path2(self, dl_train, dl_valid, dl_test, epochs):
         """
+        Input:
+        - Training, validation, and testing (optional) DataLoaders
+        - Maximum number of epochs
+
+        Output:
+        - Best (validation) and last models found when iteratively decreasing the constraint t0
+        - DataFrame with path data
+        - DataFrame with the weights along the path (if requested)
         """
         n_iterations = epochs*len(dl_train)
         if n_iterations < 1:
@@ -543,7 +633,7 @@ class Lockout():
 
     # .Loop Over Number of Epochs
         iteration = 0
-        iterator = tqdm.notebook.tqdm(range(1, epochs+1), desc='Epochs2')
+        iterator = tqdm(range(1, epochs+1), desc='Epochs2')
         for n_epoch in iterator:
 
         # ..Loop Over Mini-batches
@@ -571,8 +661,7 @@ class Lockout():
                 self.__path_loss['train_loss'] = loss.item()
 
             # ...Store Output data
-                self.__store_output_data(dl_train, dl_valid, dl_test, 
-                                         self.__model, self.__regul_type)
+                self.__store_output_data(dl_train, dl_valid, dl_test, self.__model)
 
             # ...Check For Validation Minimum
                 if self.__path_loss['valid_loss'] < self.__best_loss_valid:
@@ -623,6 +712,14 @@ class Lockout():
 # TRAIN FORWARD
     def __train_forward(self, dl_train, dl_valid, dl_test, epochs):
         """
+        Input:
+        - Training, validation, and testing (optional) DataLoaders
+        - Maximum number of epochs
+
+        Output:
+        - Best (validation) and last models when training unconstrained
+        - DataFrame with path data
+        - DataFrame with the weights along the path (if requested)
         """
         n_iterations = epochs*len(dl_train)
         if n_iterations < 1:
@@ -639,14 +736,14 @@ class Lockout():
         self.__best_iter_valid = 0
         self.__best_loss_valid = np.inf
         self.__t0 = None
-        self.__ymean = {'train': None, 'valid':None, 'test':None}
+        self.__ymean = {'train': None, 'valid': None, 'test': None}
 
     # .Set up optimizer (...write method to set up optim...)
         optimizer = self.__setup_optimizer()
 
     # .Loop Over Number of Epochs
         iteration = 0
-        iterator = tqdm.notebook.tqdm(range(1, epochs+1), desc='Epochs')
+        iterator = tqdm(range(1, epochs+1), desc='Epochs')
         for n_epoch in iterator:
     # ..Loop Over Mini-batches
             for ibatch, (xx, yy_true, _) in enumerate(dl_train, start=1):
@@ -665,8 +762,7 @@ class Lockout():
                 self.__path_loss['train_loss'] = loss.item()
 
     # ...Store Output data
-                self.__store_output_data(dl_train, dl_valid, dl_test, 
-                                         self.__model, self.__regul_type)
+                self.__store_output_data(dl_train, dl_valid, dl_test, self.__model)
 
     # ...Check For Validation Minimum
                 if self.__path_loss['valid_loss'] < self.__best_loss_valid:
@@ -701,11 +797,8 @@ class Lockout():
 # SET UP OPTIMIZER
     def __setup_optimizer(self):
         """
-        Input:
-        - 
-        
         Output:
-        - 
+        - Instantiate chosen optimizer with user's input parameters (if given)
         """
     # .Set up Stochastic Gradient Descend (SGD)
         if self.__optim_id == 1:
@@ -757,6 +850,14 @@ class Lockout():
 # GRADIENTS UPDATE WITH LOCKOUT
     def __lockout_grad_update(self, weights, grads, t0, reg_type):
         """
+        Input:
+        - weights: model weights
+        - grads: gradients
+        - t0: value of the constraint
+        - reg_type: type of regularization
+
+        Output:
+        - grads: modified gradients according to 'lockout' algorithm to be used with SGD 
         """
     # ..Compute P(w) and dP(w)/dw
         w_shape = weights.size()
@@ -804,13 +905,19 @@ class Lockout():
 
         
 # STORE LOCKOUT OUTPUT DATA
-    def __store_output_data(self, dl_train, dl_valid, dl_test, model, layers):
+    def __store_output_data(self, dl_train, dl_valid, dl_test, model):
         """
+        Input:
+        - Training, validation, and testing (optional) DataLoaders
+        - model: model at current iteration
+
+        Output:
+        - Updated DataFrame with path data for current iteration 
         """
         dict_tmp = {'iteration': int(self.__iteration)}
         dict_tmp.update(self.__path_loss)
         if self.__regul_type is not None:
-            for key in layers:
+            for key in self.__regul_type:
                 dict_tmp['t0_calc__'+key] = self.__path_t0[key].item()
                 dict_tmp['t0_used__'+key] = self.__t0[key].item()
                 dict_tmp['sparcity__'+key] = self.__path_sparcity[key]
@@ -862,7 +969,7 @@ class Lockout():
         Output:
         - updated sparcity 'self.__path_sparcity'.
 
-                   # of non zero features
+                   # of nonzero features
         sparcity = ----------------------
                    total # of features
         """
@@ -876,6 +983,14 @@ class Lockout():
 # CHECK CONVERGENCE (TRAIN)
     def __check_convergence(self, iteration, t0_tmp):
         """
+        Input:
+        - iteration: current iteration number
+        - t0_tmp: calculated constraint value (t0) for current iteration
+
+        Output:
+        - Convergence flag. 
+          Convergence is achieved when both changes in validation loss and constraint values 
+          are small for 'early_stopping' consecutive iterations
         """
         train_loss_change = abs(self.__temp_data.loc[iteration, 'train_loss'] - 
                                 self.__temp_data.loc[max(0, iteration-1), 'train_loss'])
