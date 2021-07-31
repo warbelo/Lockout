@@ -3,4 +3,3 @@
 __version__ = '0.1.3'
 
 from .core import Lockout
-from .utils import *
