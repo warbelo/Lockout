@@ -20,8 +20,10 @@ def read_list(file_path):
     Output:
     - itemlist: list read from file (python list)
     """
-    with open(file_path, 'rb') as file:
-        itemlist = pickle.load(file)
+    itemlist = None
+    if os.path.exists(file_path):
+        with open(file_path, 'rb') as file:
+            itemlist = pickle.load(file)
     return itemlist
 
 

@@ -100,33 +100,43 @@ def load_data_reg(folder):
     (X, xtrain, xvalid, xtest, Y, ytrain, yvalid, ytest) read from CVS files
     and transformed to proper torch tensors for regression
     """
-# Read X, xtrain, xvalid, and xtest
-    df = pd.read_csv(os.path.join(folder, 'X.csv'), 
-                     index_col=False, header=None)
-    X = torch.tensor(df.values).float()
-    df = pd.read_csv(os.path.join(folder, 'xtrain.csv'), 
-                     index_col=False, header=None)
-    xtrain = torch.tensor(df.values).float()
-    df = pd.read_csv(os.path.join(folder, 'xvalid.csv'), 
-                     index_col=False, header=None)
-    xvalid = torch.tensor(df.values).float()
-    df = pd.read_csv(os.path.join(folder, 'xtest.csv'), 
-                     index_col=False, header=None)
-    xtest = torch.tensor(df.values).float()
+# Read X, xtrain, xvalid, and xtest (if given)
+    X, xtrain, xvalid, xtest = None, None, None, None
+    if os.path.exists(os.path.join(folder, 'X.csv')):
+        df = pd.read_csv(os.path.join(folder, 'X.csv'), 
+                        index_col=False, header=None)
+        X = torch.tensor(df.values).float()
+    if os.path.exists(os.path.join(folder, 'xtrain.csv')):
+        df = pd.read_csv(os.path.join(folder, 'xtrain.csv'), 
+                        index_col=False, header=None)
+        xtrain = torch.tensor(df.values).float()
+    if os.path.exists(os.path.join(folder, 'xvalid.csv')):
+        df = pd.read_csv(os.path.join(folder, 'xvalid.csv'), 
+                        index_col=False, header=None)
+        xvalid = torch.tensor(df.values).float()
+    if os.path.exists(os.path.join(folder, 'xtest.csv')):
+        df = pd.read_csv(os.path.join(folder, 'xtest.csv'), 
+                        index_col=False, header=None)
+        xtest = torch.tensor(df.values).float()
     
-# Read Y, ytrain, yvalid, and ytest
-    df = pd.read_csv(os.path.join(folder, 'Y.csv'), 
-                     index_col=False, header=None)
-    Y = torch.tensor(df.values).float()
-    df = pd.read_csv(os.path.join(folder, 'ytrain.csv'), 
-                     index_col=False, header=None)
-    ytrain = torch.tensor(df.values).float()
-    df = pd.read_csv(os.path.join(folder, 'yvalid.csv'), 
-                     index_col=False, header=None)
-    yvalid = torch.tensor(df.values).float()
-    df = pd.read_csv(os.path.join(folder, 'ytest.csv'), 
-                     index_col=False, header=None)
-    ytest = torch.tensor(df.values).float()
+# Read Y, ytrain, yvalid, and ytest (if given)
+    Y, ytrain, yvalid, ytest = None, None, None, None
+    if os.path.exists(os.path.join(folder, 'Y.csv')):
+        df = pd.read_csv(os.path.join(folder, 'Y.csv'), 
+                        index_col=False, header=None)
+        Y = torch.tensor(df.values).float()
+    if os.path.exists(os.path.join(folder, 'ytrain.csv')):
+        df = pd.read_csv(os.path.join(folder, 'ytrain.csv'), 
+                        index_col=False, header=None)
+        ytrain = torch.tensor(df.values).float()
+    if os.path.exists(os.path.join(folder, 'yvalid.csv')):
+        df = pd.read_csv(os.path.join(folder, 'yvalid.csv'), 
+                        index_col=False, header=None)
+        yvalid = torch.tensor(df.values).float()
+    if os.path.exists(os.path.join(folder, 'ytest.csv')):
+        df = pd.read_csv(os.path.join(folder, 'ytest.csv'), 
+                        index_col=False, header=None)
+        ytest = torch.tensor(df.values).float()
     return X, xtrain, xvalid, xtest, Y, ytrain, yvalid, ytest
 
 
@@ -140,33 +150,43 @@ def load_data_clf(folder):
     (X, xtrain, xvalid, xtest, Y, ytrain, yvalid, ytest) read from CVS files
     and transformed to proper torch tensors for classification
     """
-# Read X, xtrain, xvalid, and xtest
-    df = pd.read_csv(os.path.join(folder, 'X.csv'), 
-                     index_col=False, header=None)
-    X = torch.tensor(df.values).float()
-    df = pd.read_csv(os.path.join(folder, 'xtrain.csv'), 
-                     index_col=False, header=None)
-    xtrain = torch.tensor(df.values).float()
-    df = pd.read_csv(os.path.join(folder, 'xvalid.csv'), 
-                     index_col=False, header=None)
-    xvalid = torch.tensor(df.values).float()
-    df = pd.read_csv(os.path.join(folder, 'xtest.csv'), 
-                     index_col=False, header=None)
-    xtest = torch.tensor(df.values).float()
+# Read X, xtrain, xvalid, and xtest (if given)
+    X, xtrain, xvalid, xtest = None, None, None, None
+    if os.path.exists(os.path.join(folder, 'X.csv')):
+        df = pd.read_csv(os.path.join(folder, 'X.csv'), 
+                        index_col=False, header=None)
+        X = torch.tensor(df.values).float()
+    if os.path.exists(os.path.join(folder, 'xtrain.csv')):
+        df = pd.read_csv(os.path.join(folder, 'xtrain.csv'), 
+                        index_col=False, header=None)
+        xtrain = torch.tensor(df.values).float()
+    if os.path.exists(os.path.join(folder, 'xvalid.csv')):
+        df = pd.read_csv(os.path.join(folder, 'xvalid.csv'), 
+                        index_col=False, header=None)
+        xvalid = torch.tensor(df.values).float()
+    if os.path.exists(os.path.join(folder, 'xtest.csv')):
+        df = pd.read_csv(os.path.join(folder, 'xtest.csv'),
+                        index_col=False, header=None)
+        xtest = torch.tensor(df.values).float()
     
-# Read Y, ytrain, yvalid, and ytest
-    df = pd.read_csv(os.path.join(folder, 'Y.csv'), 
-                     index_col=False, header=None)
-    Y = torch.tensor(df.values).long()
-    df = pd.read_csv(os.path.join(folder, 'ytrain.csv'), 
-                     index_col=False, header=None)
-    ytrain = torch.tensor(df.values).long()
-    df = pd.read_csv(os.path.join(folder, 'yvalid.csv'), 
-                     index_col=False, header=None)
-    yvalid = torch.tensor(df.values).long()
-    df = pd.read_csv(os.path.join(folder, 'ytest.csv'), 
-                     index_col=False, header=None)
-    ytest = torch.tensor(df.values).long()
+# Read Y, ytrain, yvalid, and ytest (if given)
+    Y, ytrain, yvalid, ytest = None, None, None, None
+    if os.path.exists(os.path.join(folder, 'Y.csv')):
+        df = pd.read_csv(os.path.join(folder, 'Y.csv'), 
+                        index_col=False, header=None)
+        Y = torch.tensor(df.values).long()
+    if os.path.exists(os.path.join(folder, 'ytrain.csv')):
+        df = pd.read_csv(os.path.join(folder, 'ytrain.csv'), 
+                        index_col=False, header=None)
+        ytrain = torch.tensor(df.values).long()
+    if os.path.exists(os.path.join(folder, 'yvalid.csv')):
+        df = pd.read_csv(os.path.join(folder, 'yvalid.csv'), 
+                        index_col=False, header=None)
+        yvalid = torch.tensor(df.values).long()
+    if os.path.exists(os.path.join(folder, 'ytest.csv')):
+        df = pd.read_csv(os.path.join(folder, 'ytest.csv'), 
+                        index_col=False, header=None)
+        ytest = torch.tensor(df.values).long()
     return X, xtrain, xvalid, xtest, Y, ytrain, yvalid, ytest
 
 
@@ -386,9 +406,6 @@ def make_DataLoaders(xtrain, xvalid, xtest, ytrain, yvalid, ytest,
                                                    batch_size = batch_size,
                                                    shuffle = False, 
                                                    num_workers=num_workers)
-    print('(train, valid, test) = ({}, {}, {})'.format(len(train_dataloader),
-                                                       len(valid_dataloader), 
-                                                       len(test_dataloader)))
     return train_dataloader, valid_dataloader, test_dataloader
 
 
@@ -442,4 +459,3 @@ def normalize_xy(xtrain, xvalid, xtest, ytrain, yvalid, ytest):
     y_valid = torch.from_numpy(scaler.transform(yvalid.numpy()))
     y_test = torch.from_numpy(scaler.transform(ytest.numpy()))
     return x_train, x_valid, x_test, y_train, y_valid, y_test
-    
