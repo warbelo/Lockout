@@ -13,15 +13,72 @@ pip install lockout [-- upgrade]
 [`PyTorch`](https://pytorch.org/) installation required.  
 
 
-### 1. Import Lockout (and PyTorch)
+### 1. Neural Network Architecture
+To modify the architecture of the fully connected neural network change either: 
+* The number of input features: n_features
+* The number of layers: len(layer_sizes)
+* The number of nodes in the i<em>th</em> layer: layer_sizes[i]
 ```
-import torch
+from lockout.pytorch_utils import FCNN
+
+n_features  = 100       
+layer_sizes = [10, 1]   
+model_init  = FCNN(n_features, layer_sizes)
+```
+### 2. Create DataLoaders
+Previous preprocessing and partitioning of the data is assumed.
+```
+from lockout.pytorch_utils import make_DataLoaders
+
+dl_train, dl_valid, dl_test = make_DataLoaders(xtrain, xvalid, xtest, ytrain, yvalid, ytest)
+```
+### 3. Unconstrained Training
+Modify the following hyperparameters to fit to your particular problem:
+* lr: Learning rate
+* loss_type: Type of loss function
+    - loss_type=1 (Mean Squared Error) 
+    - loss_type=2 (Mean Cross Entropy)
+* optim_id: Optimizer 
+    - optim_id = 1: Stochastic Gradient Descend
+    - optim_id = 2: Adam
+* epochs: Maximum number of epochs during training
+* early_stopping: Number of epochs used in the convergence condition
+* tol_loss: Maxumum change in the training loss function used in the convergence condition
+* reset_weights: Whether or not to reset weights before starts training
+```
 from lockout import Lockout
+
+lr = 1e-2
+loss_type = 1
+optim_id  = 1
+
+# Instantiate Lockout
+lockout_forward = Lockout(model_init, 
+                          lr=lr, 
+                          loss_type=loss_type, 
+                          optim_id=optim_id)
+
+# Train Neural Network Without Regularization
+lockout_forward.train(dl_train, dl_valid, 
+                      train_how="unconstrained",
+                      epochs=10000,
+                      early_stopping=20,
+                      tol_loss=1e-6,
+                      reset_weights=True)
+```
+The model at the validation minimum and the unconstrained model can be retrieved and/or saved.
+```
+from lockout.pytorch_utils import save_model
+
+# Save Unconstrained Model
+model_forward_unconstrined = lockout_forward.model_last
+save_model(model_forward_unconstrined, 'model_forward_unconstrined.pth')
+
+# Save Model At Validation Minimum
+model_forward_best = lockout_forward.model_best_valid
+save_model(model_forward_best, 'model_forward_best.pth')
 ```
 
-### 2. Neural Network Architecture
-```
-```
 
 ## Paper
 
