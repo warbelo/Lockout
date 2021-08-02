@@ -66,7 +66,7 @@ lockout_forward.train(dl_train, dl_valid,
                       tol_loss=1e-6,
                       reset_weights=True)
 ```
-The model at the validation minimum and the unconstrained model can be retrieved and/or saved.
+The model at the validation minimum and the unconstrained model can be retrieved and saved.
 ```
 from lockout.pytorch_utils import save_model
 
@@ -79,6 +79,7 @@ model_forward_best = lockout_forward.model_best_valid
 save_model(model_forward_best, 'model_forward_best.pth')
 ```
 
+![fig1-url](fig)
 
 ## Paper
 
@@ -91,3 +92,5 @@ https://arxiv.org/abs/2107.07160
 
 [pypi-image]: https://img.shields.io/pypi/v/lockout
 [pypi-url]: https://pypi.org/project/lockout/
+
+[fig1-url]: https://github.com/warbelo/Lockout/blob/8557f7773ddc710571bb0861c58fe57d27e2940b/Doc/loss_vs_iter_forward.png
