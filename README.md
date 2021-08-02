@@ -12,8 +12,7 @@ pip install lockout [-- upgrade]
 ## Usage
 [`PyTorch`](https://pytorch.org/) installation required.  
 
-
-### 1. Neural Network Architecture
+### **1.** Neural Network Architecture
 To modify the architecture of the fully connected neural network change either: 
 * The number of input features: n_features
 * The number of layers: len(layer_sizes)
@@ -25,15 +24,17 @@ n_features  = 100
 layer_sizes = [10, 1]   
 model_init  = FCNN(n_features, layer_sizes)
 ```
-### 2. Create DataLoaders
+
+### **2.** Create DataLoaders
 Previous preprocessing and partitioning of the data is assumed.
 ```
 from lockout.pytorch_utils import make_DataLoaders
 
 dl_train, dl_valid, dl_test = make_DataLoaders(xtrain, xvalid, xtest, ytrain, yvalid, ytest)
 ```
-### 3. Unconstrained Training
-Modify the following hyperparameters to fit to your particular problem:
+
+### **3.** Unconstrained Training
+Modify the following hyperparameters according to your particular problem:
 * lr: Learning rate
 * loss_type: Type of loss function
     - loss_type=1 (Mean Squared Error) 
@@ -66,28 +67,64 @@ lockout_forward.train(dl_train, dl_valid,
                       tol_loss=1e-6,
                       reset_weights=True)
 ```
-The model at the validation minimum and the unconstrained model can be retrieved and saved.
+
+The model at the validation minimum and the unconstrained model can be retrieved and saved for further use.
 ```
 from lockout.pytorch_utils import save_model
 
 # Save Unconstrained Model
-model_forward_unconstrined = lockout_forward.model_last
-save_model(model_forward_unconstrined, 'model_forward_unconstrined.pth')
+model_forward_unconstrained = lockout_forward.model_last
+save_model(model_forward_unconstrained, 'model_forward_unconstrained.pth')
 
 # Save Model At Validation Minimum
 model_forward_best = lockout_forward.model_best_valid
 save_model(model_forward_best, 'model_forward_best.pth')
 ```
 
+Path data can be retrieved for analysis or graphing. For regression problems, R2 is computed as the accuracy.
+```
+df = lockout_forward.path_data
+df.head()
+```
+<p align="left">
+  <img src="Doc/path_data1.png" width="400" title="Loss vs iteration for unconstrained training">
+</p>
+
+```
+import matplotlib.pyplot as plt
+import numpy as np
+
+fig, axes = plt.subplots(figsize=(9,6))
+axes.plot(df["iteration"], df["train_loss"], label="Training", linewidth=4)
+axes.plot(df["iteration"], df["valid_loss"], label="Validation", linewidth=4)
+axes.legend(fontsize=16)
+axes.set_xlabel("iteration", fontsize=16)
+axes.set_ylabel("Loss Function", fontsize=16)
+axes.set_yticks(np.arange(0.3, 1.4, 0.3))
+axes.tick_params(axis='both', which='major', labelsize=14)
+axes.set_title("Unconstrained", fontsize=16)
+axes.grid(True, zorder=2)
+plt.show()
+```
 <p align="left">
   <img src="Doc/loss_vs_iter_forward.png" width="400" title="Loss vs iteration for unconstrained training">
 </p>
+
+### **4.** Lockout Training: Option 1
+Within this option, the constraint $t_0$ is iteratively decreased during training. $t_0$ step size is computed as
+
+$
+\Delta t_0 =\frac{{t_0}_{\mathrm{final}} - {t_0}_{\mathrm{initial}}}{\mathrm{epochs}}.
+$
+
+A small $\Delta t_0$ is necessary to stay on the regularization path. 'epochs' must be chosen accordingly.
+
 
 ## Paper
 
 https://arxiv.org/abs/2107.07160
 
-**Abstract:** Regularized regression and classification procedures attempt to fit a function <b>f</b>(<b>x,&omega;</b>) of multiple predictor variables <b>x</b>, to data {<b>x</b><sub>i</sub>,<b>y</b><sub>i</sub>}<sub>1</sub><sup>N</sup>, based on some loss criterion <b>L</b>(y,f) but adding a constraint <b>P</b>(<b>&omega;</b>) &le; t on the joint values of the parameters <b>&omega;</b> to improve accuracy. While there are efficient methods for finding solutions for all values of t &ge; 0 with some constraints <b>P</b> in the special case that <b>f</b> is a linear function, none exist for non linear functions such as Neural Networks (NN). Here we present a fast algorithm that provides all such solutions for any differentiable function <b>f</b> and loss <b>L</b>, and any constraint <b>P</b> that is an increasing monotone function of the absolute value of each parameter. Applications involving sparsity inducing regularization of arbitrary neural networks are discussed. Empirical results indicate that these sparse solutions are usually superior to their dense counterparts in both accuracy and interpretability. This improvement in accuracy can often make neural networks competitive with, and some times superior to, state of the art methods in the analysis of tabular data.
+**Abstract:** Regularized regression and classification procedures attempt to fit a function $f(\bm{x}, \bm{\omega})$ of multiple predictor variables $\bm{x}$, to data $\{\bm{x}_i, \bm{y}_i\}^N_i$, based on some loss criterion $L(y,f)$ but adding a constraint $P(\bm{\omega})\le t_0$ on the joint values of the parameters $\bm{\omega}$ to improve accuracy. While there are efficient methods for finding solutions for all values of $t_0 \ge 0$ with some constraints $P$ in the special case that $f$ is a linear function, none exist for non linear functions such as Neural Networks (NN). Here we present a fast algorithm that provides all such solutions for any differentiable function $f$ and loss $L$, and any constraint $P$ that is an increasing monotone function of the absolute value of each parameter. Applications involving sparsity inducing regularization of arbitrary neural networks are discussed. Empirical results indicate that these sparse solutions are usually superior to their dense counterparts in both accuracy and interpretability. This improvement in accuracy can often make neural networks competitive with, and some times superior to, state of the art methods in the analysis of tabular data.
 
 
 <!-- Badges -->
