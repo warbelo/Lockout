@@ -79,7 +79,9 @@ model_forward_best = lockout_forward.model_best_valid
 save_model(model_forward_best, 'model_forward_best.pth')
 ```
 
-![fig](Doc/loss_vs_iter_forward.png)
+<p align="left">
+  <img src="Doc/loss_vs_iter_forward.png" width="400" title="Loss vs iteration for unconstrained training">
+</p>
 
 ## Paper
 
