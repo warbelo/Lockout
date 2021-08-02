@@ -79,7 +79,7 @@ model_forward_best = lockout_forward.model_best_valid
 save_model(model_forward_best, 'model_forward_best.pth')
 ```
 
-![fig1-url](fig)
+![fig](Doc/loss_vs_iter_forward.png)
 
 ## Paper
 
