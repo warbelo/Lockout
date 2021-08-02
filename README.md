@@ -1,7 +1,7 @@
 # Lockout
 [![PyPI Version][pypi-image]][pypi-url]
 
-Sparsity Inducing Regularization of Fully Connected Neural Networks
+Sparsity Inducing Regularization of Neural Networks
 
 ## Install
 
@@ -13,7 +13,7 @@ pip install lockout [-- upgrade]
 [`PyTorch`](https://pytorch.org/) installation required.  
 
 ### **1.** Neural Network Architecture
-To modify the architecture of the fully connected neural network change either: 
+To modify the architecture of the neural network change either: 
 * The number of input features: n_features
 * The number of layers: len(layer_sizes)
 * The number of nodes in the i<em>th</em> layer: layer_sizes[i]
