@@ -25,7 +25,7 @@ layer_sizes = [10, 1]
 model_init  = FCNN(n_features, layer_sizes)
 ```
 
-### **2.** Create DataLoaders
+### **2.** Create PyTorch DataLoaders
 Previous preprocessing and partitioning of the data is assumed.
 ```
 from lockout.pytorch_utils import make_DataLoaders
