@@ -44,7 +44,7 @@ Modify the following hyperparameters according to your particular problem:
     - optim_id = 2: Adam
 * epochs: Maximum number of epochs during training
 * early_stopping: Number of epochs used in the convergence condition
-* tol_loss: Maxumum change in the training loss function used in the convergence condition
+* tol_loss: Maximum change in the training loss function used in the convergence condition
 * reset_weights: Whether or not to reset weights before starts training
 ```
 from lockout import Lockout
@@ -81,13 +81,13 @@ model_forward_best = lockout_forward.model_best_valid
 save_model(model_forward_best, 'model_forward_best.pth')
 ```
 
-Path data can be retrieved for analysis or graphing. For regression problems, R2 is computed as the accuracy.
+Loss and accuracy curves can be retrieved for analysis or graphing. For regression problems, R2 is computed as the accuracy.
 ```
-df = lockout_forward.path_data
-df.head()
+df0 = lockout_forward.path_data
+df0.head()
 ```
 <p align="left">
-  <img src="Doc/path_data1.png" width="400" title="Loss vs iteration for unconstrained training">
+  <img src="Doc/path_data0.png" width="400" title="Loss vs iteration for unconstrained training">
 </p>
 
 ```
@@ -95,12 +95,11 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 fig, axes = plt.subplots(figsize=(9,6))
-axes.plot(df["iteration"], df["train_loss"], label="Training", linewidth=4)
-axes.plot(df["iteration"], df["valid_loss"], label="Validation", linewidth=4)
+axes.plot(df0["iteration"], df0["train_loss"], label="Training", linewidth=4)
+axes.plot(df0["iteration"], df0["valid_loss"], label="Validation", linewidth=4)
 axes.legend(fontsize=16)
 axes.set_xlabel("iteration", fontsize=16)
 axes.set_ylabel("Loss Function", fontsize=16)
-axes.set_yticks(np.arange(0.3, 1.4, 0.3))
 axes.tick_params(axis='both', which='major', labelsize=14)
 axes.set_title("Unconstrained", fontsize=16)
 axes.grid(True, zorder=2)
@@ -111,14 +110,57 @@ plt.show()
 </p>
 
 ### **4.** Lockout Training: Option 1
-Within this option, the constraint $t_0$ is iteratively decreased during training. $t_0$ step size is computed as
+Within this option, the network is first trained until the regularization path is found (Path 1). Then, the constraint t<sub>0</sub> is iteratively decreased during training with a stepsize &Delta;t<sub>0</sub> inversely proportional to the number of epochs (Path 2).
+A small &Delta;t<sub>0</sub> is necessary to stay on the regularization path.
+<br>
+Modify the following hyperparameters according to your particular problem:
+* input_model: input model, either unconstrained or at validation minimum
+* regul_type: list of tuples (or dictionary) of the form [(layer_name, regul_id)] where:
+    - layer_name: layer name in the input model (string)
+    - regul_id = 1: L1 regularization
+    - regul_id = 2: Log regularization (see get_constraint function)
+* regul_path: list of tuples (or dictionary) of the form [(layer_name, path_flg)] where:
+    - path_flg = True: the constraint t<sub>0</sub> will be iteratively decreased in this layer
+    - path_flg = False: the constraint t<sub>0</sub> will be kept constant in this layer
+* epochs: maximum number of epochs used to bring the network to the regularization path (Path 1)
+* epochs2: maximum number of epochs used while training decreasing t<sub>0</sub> (Path 2)
 
-$
-\Delta t_0 =\frac{{t_0}_{\mathrm{final}} - {t_0}_{\mathrm{initial}}}{\mathrm{epochs}}.
-$
+```
+from lockout import Lockout
 
-A small $\Delta t_0$ is necessary to stay on the regularization path. 'epochs' must be chosen accordingly.
+regul_type = [('linear_layers.0.weight', 1)]
+regul_path = [('linear_layers.0.weight', True)]
 
+# Instantiate Lockout
+lockout_option1 = Lockout(lockout_forward.model_best_valid,
+                          lr=1e-2, 
+                          loss_type=1,
+                          regul_type=regul_type,
+                          regul_path=regul_path)
+
+# Train Neural Network With Lockout
+lockout_option1.train(dl_train, dl_valid, 
+                      train_how="decrease_t0", 
+                      epochs=5000,
+                      epochs2=20000,
+                      early_stopping=20, 
+                      tol_loss=1e-5)
+```
+
+The model at the validation minimum can be retrieved and saved for further use.
+```
+from lockout.pytorch_utils import save_model
+
+# Save Model At Validation Minimum
+model_lockout_option1 = lockout_option1.model_best_valid
+save_model(model_lockout_option1, 'model_lockout_option1.pth')
+```
+
+Path data can be retrieved for analysis or graphing.
+```
+df0 = lockout_forward.path_data
+df0.head()
+```
 
 ## Paper
 
