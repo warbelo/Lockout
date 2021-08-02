@@ -161,6 +161,9 @@ Path data can be retrieved for analysis or graphing.
 df0 = lockout_forward.path_data
 df0.head()
 ```
+<p align="left">
+  <img src="Doc/path_data1.png" width="900" title="Loss vs iteration for unconstrained training">
+</p>
 
 ## Paper
 
