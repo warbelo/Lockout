@@ -87,7 +87,7 @@ df0 = lockout_forward.path_data
 df0.head()
 ```
 <p align="left">
-  <img src="Doc/path_data0.png" width="400" title="Loss vs iteration for unconstrained training">
+  <img src="Doc/path_data0.png" width="400" title="Loss and accuracy curves for unconstrained training">
 </p>
 
 ```
@@ -158,12 +158,53 @@ save_model(model_lockout_option1, 'model_lockout_option1.pth')
 
 Path data can be retrieved for analysis or graphing.
 ```
-df0 = lockout_forward.path_data
-df0.head()
+df1 = lockout_forward.path_data
+df1.head()
 ```
 <p align="left">
-  <img src="Doc/path_data1.png" width="900" title="Loss vs iteration for unconstrained training">
+  <img src="Doc/path_data1.png" width="900" title="Path data for lockout training">
 </p>
+
+Test accuracy can be computed using the models previously trained.
+```
+import torch
+from lockout.pytorch_utils import dataset_r2
+
+device = torch.device('cpu')
+r2_test_forward, _  = dataset_r2(dl_test, model_forward_best, device)
+r2_test_lockout1, _ = dataset_r2(dl_test, model_lockout_option1, device)
+print("Test R2 (unconstrained) = {:.3f}".format(r2_test_forward))
+print("Test R2 (lockout)       = {:.3f}".format(r2_test_lockout1))
+```
+<p align="left">
+  <img src="Doc/r2_test1.png" width="280" title="Test R2">
+</p>
+
+Feature importance can be computed and graphed.
+```
+import matplotlib.pyplot as plt
+import numpy as np
+from lockout.pytorch_utils import get_features_importance
+
+importance = get_features_importance(model_lockout_option1, 'linear_layers.0.weight')
+
+fig, axes = plt.subplots(figsize=(9,6))
+x_pos = np.arange(len(importance))
+axes.bar(x_pos, importance, zorder=2)
+axes.set_xticks(x_pos)
+axes.set_xticklabels(importance.index, rotation='vertical')
+axes.set_xlim(-1,len(x_pos))
+axes.tick_params(axis='both', which='major', labelsize=14)
+axes.set_ylabel('Importance', fontsize=16)
+axes.set_xlabel('feature', fontsize=16)
+axes.set_title('Lockout', fontsize=16)
+axes.grid(True, zorder=1)
+plt.show()
+```
+<p align="left">
+  <img src="Doc/feature_importance_lockout1.png" width="500" title="feature importance with lockout">
+</p>
+
 
 ## Paper
 
