@@ -46,8 +46,7 @@ Modify the following hyperparameters according to your particular problem:
 * early_stopping: Number of epochs used in the convergence condition
 * tol_loss: Maximum change in the training loss function used in the convergence condition
 * reset_weights: Whether or not to reset weights before starts training
-```
-from lockout import Lockout
+<pre><code>from lockout import Lockout
 
 lr = 1e-2
 loss_type = 1
@@ -61,12 +60,12 @@ lockout_forward = Lockout(model_init,
 
 # Train Neural Network Without Regularization
 lockout_forward.train(dl_train, dl_valid, 
-                      train_how="unconstrained",
+                      <b>train_how="unconstrained"</b>,
                       epochs=10000,
                       early_stopping=20,
                       tol_loss=1e-6,
                       reset_weights=True)
-```
+</pre></code>
 
 The model at the validation minimum and the unconstrained model can be retrieved and saved for further use.
 ```
@@ -125,7 +124,7 @@ Modify the following hyperparameters according to your particular problem:
 * epochs: maximum number of epochs used to bring the network to the regularization path (Path 1)
 * epochs2: maximum number of epochs used while training decreasing t<sub>0</sub> (Path 2)
 
-```
+<pre><code>
 from lockout import Lockout
 
 regul_type = [('linear_layers.0.weight', 1)]
@@ -140,12 +139,12 @@ lockout_option1 = Lockout(lockout_forward.model_best_valid,
 
 # Train Neural Network With Lockout
 lockout_option1.train(dl_train, dl_valid, 
-                      train_how="decrease_t0", 
+                      <b>train_how="decrease_t0"</b>, 
                       epochs=5000,
                       epochs2=20000,
                       early_stopping=20, 
                       tol_loss=1e-5)
-```
+</pre></code>
 
 The model at the validation minimum can be retrieved and saved for further use.
 ```
@@ -306,7 +305,7 @@ Whithin this option, the neural network is trained with a single (constant) valu
 Modify the following hyperparameters according to your particular problem:
 * t0: List of tuples (or dictionary) of the form [(layer_name, t0_value)] where:
     - layer_name: layer name in the input model (string)
-    - t0_value: constraint value t0 to be sampled in the layer (tensor)
+    - t0_value: constraint value t0 used in the layer (tensor)
 ```
 from lockout import Lockout
 from lockout.pytorch_utils import save_model
@@ -373,6 +372,26 @@ plt.show()
   <img src="Doc/feature_importance_lockout3.png" width="500" title="feature importance with lockout">
 </p>
 
+### **7.** Lockout Training: Option 4
+Within this option, the neural network is trained until the regularization path is found. The contraint value used, t<sub>0</sub> is computed from the input model.
+```
+from lockout import Lockout
+
+regul_type = [('linear_layers.0.weight', 1)]
+
+# Instantiate Lockout
+lockout_option4 = Lockout(model_forward_best,
+                          lr=1e-2, 
+                          loss_type=1,
+                          regul_type=regul_type)
+
+# Train Neural Network With Lockout
+lockout_option4.train(dl_train, dl_valid, 
+                      train_how="until_path", 
+                      epochs=10000,
+                      early_stopping=20, 
+                      tol_loss=1e-5)
+```
 
 ## Paper
 
