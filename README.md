@@ -124,8 +124,7 @@ Modify the following hyperparameters according to your particular problem:
 * epochs: maximum number of epochs used to bring the network to the regularization path (Path 1)
 * epochs2: maximum number of epochs used while training decreasing t<sub>0</sub> (Path 2)
 
-<pre><code>
-from lockout import Lockout
+<pre><code>from lockout import Lockout
 
 regul_type = [('linear_layers.0.weight', 1)]
 regul_path = [('linear_layers.0.weight', True)]
@@ -212,8 +211,7 @@ Modify the following hyperparameters according to your particular problem:
     - t0_sampled: 1D tensor with the constraint values t0 to be sampled in the layer
 * epochs: maximum number of epochs used for the first t<sub>0</sub> value, t0_sampled[0]
 * epochs2: maximum number of epochs used for the rest of the t<sub>0</sub> values, t0_sampled[1:]
-```
-from lockout import Lockout
+<pre><code>from lockout import Lockout
 
 regul_type = [('linear_layers.0.weight', 1)]
 regul_path = [('linear_layers.0.weight', True)]
@@ -231,12 +229,12 @@ lockout_option2a = Lockout(lockout_forward.model_best_valid,
 
 # Train Neural Network With Lockout
 lockout_option2a.train(dl_train, dl_valid, 
-                      train_how="sampling_t0", 
+                      <b>train_how="sampling_t0"</b>, 
                       epochs=5000,
                       epochs2=200,
                       early_stopping=20, 
                       tol_loss=1e-4)
-```
+</pre></code>
 
 All the functionalities described above can be used here, including retrieving the model at the validation minimum and computing feature importance.
 ```
@@ -306,8 +304,7 @@ Modify the following hyperparameters according to your particular problem:
 * t0: List of tuples (or dictionary) of the form [(layer_name, t0_value)] where:
     - layer_name: layer name in the input model (string)
     - t0_value: constraint value t0 used in the layer (tensor)
-```
-from lockout import Lockout
+<pre><code>from lockout import Lockout
 from lockout.pytorch_utils import save_model
 
 regul_type = [('linear_layers.0.weight', 1)]
@@ -322,7 +319,7 @@ lockout_option3 = Lockout(model_lockout_option2b,
 
 # Train Neural Network With Lockout
 lockout_option3.train(dl_train, dl_valid, 
-                      train_how="constant_t0", 
+                      <b>train_how="constant_t0"</b>, 
                       epochs=10000,
                       early_stopping=20, 
                       tol_loss=1e-5)
@@ -330,7 +327,8 @@ lockout_option3.train(dl_train, dl_valid,
 # Save Model At Regularization Path
 model_lockout_option3 = lockout_option3.model_last
 save_model(model_lockout_option3, 'model_lockout_option3.pth')
-```
+</pre></code>
+
 Test accuracy can be computed and feature importance graphed.
 ```
 # Compute Test Accuracy
@@ -374,8 +372,7 @@ plt.show()
 
 ### **7.** Lockout Training: Option 4
 Within this option, the neural network is trained until the regularization path is found. The contraint value used, t<sub>0</sub> is computed from the input model.
-```
-from lockout import Lockout
+<pre><code>from lockout import Lockout
 
 regul_type = [('linear_layers.0.weight', 1)]
 
@@ -387,11 +384,19 @@ lockout_option4 = Lockout(model_forward_best,
 
 # Train Neural Network With Lockout
 lockout_option4.train(dl_train, dl_valid, 
-                      train_how="until_path", 
+                      <b>train_how="until_path"</b>, 
                       epochs=10000,
                       early_stopping=20, 
                       tol_loss=1e-5)
-```
+
+# Path Data
+df4 = lockout_option4.path_data
+df4.tail()
+</pre></code>
+<p align="left">
+  <img src="Doc/path_data4.png" width="900" title="Path data for lockout training">
+</p>
+
 
 ## Paper
 
