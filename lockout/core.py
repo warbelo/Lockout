@@ -317,6 +317,8 @@ class Lockout():
             self.__optim_params = {}
             self.__train_path1(dl_train, dl_valid, dl_test, epochs_path1)
             self.path_data = self.path_data.append(self.__temp_data, ignore_index=True)
+            if dl_test is None:
+                self.path_data.drop(axis='columns', columns=["test_loss", "test_accu"], inplace=True)
             print("Early stopping = {}".format(self.__early_stop_flag))
             print("Last iteration = {}".format(self.__last_iter))
             print("Best validation at iteration = {}".format(self.__best_iter_valid))
@@ -352,6 +354,8 @@ class Lockout():
             self.__optim_params = {}
             self.__train_path1(dl_train, dl_valid, dl_test, epochs_path1)
             self.path_data = self.path_data.append(self.__temp_data, ignore_index=True)
+            if dl_test is None:
+                self.path_data.drop(axis='columns', columns=["test_loss", "test_accu"], inplace=True)
             print("Early stopping = {}".format(self.__early_stop_flag))
             print("Last iteration = {}".format(self.__last_iter))
             print("Best validation at iteration = {}".format(self.__best_iter_valid))

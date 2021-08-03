@@ -274,6 +274,7 @@ Modify the following hyperparameters according to your particular problem:
     - t0_number: number of constraint values t0 to be linearly sampled (integer)
 ```
 from lockout import Lockout
+from lockout.pytorch_utils import save_model
 
 regul_type = [('linear_layers.0.weight', 1)]
 regul_path = [('linear_layers.0.weight', True)]
@@ -294,7 +295,83 @@ lockout_option2b.train(dl_train, dl_valid,
                       epochs2=200,
                       early_stopping=20, 
                       tol_loss=1e-4)
+
+# Save Model At Validation Minimum
+model_lockout_option2b = lockout_option2b.model_best_valid
+save_model(model_lockout_option2b, 'model_lockout_option2b.pth')
 ```
+
+### **6.** Lockout Training: Option 3
+Whithin this option, the neural network is trained with a single (constant) value of t<sub>0</sub> until the regularization path is found.<br>
+Modify the following hyperparameters according to your particular problem:
+* t0: List of tuples (or dictionary) of the form [(layer_name, t0_value)] where:
+    - layer_name: layer name in the input model (string)
+    - t0_value: constraint value t0 to be sampled in the layer (tensor)
+```
+from lockout import Lockout
+from lockout.pytorch_utils import save_model
+
+regul_type = [('linear_layers.0.weight', 1)]
+t0 = {'linear_layers.0.weight': torch.tensor(0.4)}
+
+# Instantiate Lockout
+lockout_option3 = Lockout(model_lockout_option2b,
+                          lr=1e-3, 
+                          loss_type=1,
+                          regul_type=regul_type,
+                          t0=t0)
+
+# Train Neural Network With Lockout
+lockout_option3.train(dl_train, dl_valid, 
+                      train_how="constant_t0", 
+                      epochs=10000,
+                      early_stopping=20, 
+                      tol_loss=1e-5)
+
+# Save Model At Regularization Path
+model_lockout_option3 = lockout_option3.model_last
+save_model(model_lockout_option3, 'model_lockout_option3.pth')
+```
+Test accuracy can be computed and feature importance graphed.
+```
+# Compute Test Accuracy
+import torch
+from lockout.pytorch_utils import dataset_r2
+
+device = torch.device('cpu')
+r2_test_forward, _  = dataset_r2(dl_test, model_forward_best, device)
+r2_test_lockout3, _ = dataset_r2(dl_test, model_lockout_option3, device)
+print("Test R2 (unconstrained) = {:.3f}".format(r2_test_forward))
+print("Test R2 (lockout)       = {:.3f}".format(r2_test_lockout3))
+```
+<p align="left">
+  <img src="Doc/r2_test3.png" width="280" title="Test R2">
+</p>
+
+```
+# Graph Feature Importance
+import matplotlib.pyplot as plt
+import numpy as np
+from lockout.pytorch_utils import get_features_importance
+
+importance = get_features_importance(model_lockout_option3, 'linear_layers.0.weight')
+
+fig, axes = plt.subplots(figsize=(9,6))
+x_pos = np.arange(len(importance))
+axes.bar(x_pos, importance, zorder=2)
+axes.set_xticks(x_pos)
+axes.set_xticklabels(importance.index, rotation='vertical')
+axes.set_xlim(-1,len(x_pos))
+axes.tick_params(axis='both', which='major', labelsize=14)
+axes.set_ylabel('Importance', fontsize=16)
+axes.set_xlabel('feature', fontsize=16)
+axes.set_title('Lockout', fontsize=16)
+axes.grid(True, zorder=1)
+plt.show()
+```
+<p align="left">
+  <img src="Doc/feature_importance_lockout3.png" width="500" title="feature importance with lockout">
+</p>
 
 
 ## Paper
