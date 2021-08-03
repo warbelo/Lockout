@@ -205,6 +205,97 @@ plt.show()
   <img src="Doc/feature_importance_lockout1.png" width="500" title="feature importance with lockout">
 </p>
 
+### **5.** Lockout Training: Option 2
+Wihtin this option, a discrete set of t<sub>0</sub> values is sampled. They can be entered as a 1D tensor.<br>
+Modify the following hyperparameters according to your particular problem:
+* t0_grid: List of tuples (or dictionary) of the form [(layer_name, t0_sampled)] where:
+    - layer_name: layer name in the input model (string)
+    - t0_sampled: 1D tensor with the constraint values t0 to be sampled in the layer
+* epochs: maximum number of epochs used for the first t<sub>0</sub> value, t0_sampled[0]
+* epochs2: maximum number of epochs used for the rest of the t<sub>0</sub> values, t0_sampled[1:]
+```
+from lockout import Lockout
+
+regul_type = [('linear_layers.0.weight', 1)]
+regul_path = [('linear_layers.0.weight', True)]
+
+t0_sampled = torch.from_numpy(np.geomspace(53.504620, 1e-3, num=100, endpoint=True))
+t0_grid    = {'linear_layers.0.weight': t0_sampled}
+
+# Instantiate Lockout
+lockout_option2a = Lockout(lockout_forward.model_best_valid,
+                          lr=1e-2, 
+                          loss_type=1,
+                          regul_type=regul_type,
+                          regul_path=regul_path, 
+                          t0_grid=t0_grid)
+
+# Train Neural Network With Lockout
+lockout_option2a.train(dl_train, dl_valid, 
+                      train_how="sampling_t0", 
+                      epochs=5000,
+                      epochs2=200,
+                      early_stopping=20, 
+                      tol_loss=1e-4)
+```
+
+All the functionalities described above can be used here, including retrieving the model at the validation minimum and computing feature importance.
+```
+import matplotlib.pyplot as plt
+import numpy as np
+from lockout.pytorch_utils import save_model, get_features_importance
+
+model_lockout_option2a = lockout_option2a.model_best_valid
+save_model(model_lockout_option2a, 'model_lockout_option2a.pth')
+
+importance = get_features_importance(model_lockout_option2a, 'linear_layers.0.weight')
+
+fig, axes = plt.subplots(figsize=(9,6))
+x_pos = np.arange(len(importance))
+axes.bar(x_pos, importance, zorder=2)
+axes.set_xticks(x_pos)
+axes.set_xticklabels(importance.index, rotation='vertical')
+axes.set_xlim(-1,len(x_pos))
+axes.tick_params(axis='both', which='major', labelsize=14)
+axes.set_ylabel('Importance', fontsize=16)
+axes.set_xlabel('feature', fontsize=16)
+axes.set_title('Lockout', fontsize=16)
+axes.grid(True, zorder=1)
+plt.show()
+``` 
+<p align="left">
+  <img src="Doc/feature_importance_lockout2a.png" width="500" title="feature importance with lockout">
+</p>
+
+Alternatively, the discrete set of t<sub>0</sub> values can be generated internally, in which case they are linearly sampled.<br>
+Modify the following hyperparameters according to your particular problem:
+* t0_points: list of tuples (or dictionary) of the form [(layer_name, t0_number)] where:
+    - layer_name: layer name in the input model (string)
+    - t0_number: number of constraint values t0 to be linearly sampled (integer)
+```
+from lockout import Lockout
+
+regul_type = [('linear_layers.0.weight', 1)]
+regul_path = [('linear_layers.0.weight', True)]
+t0_points  = {'linear_layers.0.weight': 200}
+
+# Instantiate Lockout
+lockout_option2b = Lockout(lockout_forward.model_best_valid,
+                          lr=1e-2, 
+                          loss_type=1,
+                          regul_type=regul_type,
+                          regul_path=regul_path, 
+                          t0_points=t0_points)
+
+# Train Neural Network With Lockout
+lockout_option2b.train(dl_train, dl_valid, 
+                      train_how="sampling_t0", 
+                      epochs=5000,
+                      epochs2=200,
+                      early_stopping=20, 
+                      tol_loss=1e-4)
+```
+
 
 ## Paper
 
