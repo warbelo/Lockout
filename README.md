@@ -11,7 +11,7 @@ pip install lockout [-- upgrade]
 
 ## Usage
 [`PyTorch`](https://pytorch.org/) installation required.<br> 
-For more details on how to use 'lockout' check the jupyter notebook named 'lockout_user_guide.ipynb' in the Doc directory. 
+For more details on how to use 'lockout' have a look at the jupyter notebook named 'lockout_user_guide.ipynb' in the Doc directory. 
 
 ### **1.** Neural Network Architecture
 To modify the architecture of the neural network change either: 
