@@ -65,6 +65,7 @@ class Lockout():
                         save_flg: True/False to save or not weights
         """
     # .Variables Initialization
+        print("Test mode...")
         if lr is not None:
             self.__lr = torch.tensor(lr)
         else:

@@ -87,7 +87,7 @@ df0 = lockout_forward.path_data
 df0.head()
 ```
 <p align="left">
-  <img src="Doc/path_data0.png" width="400" title="Loss and accuracy curves for unconstrained training">
+  <img src="Doc/images/path_data0.png" width="400" title="Loss and accuracy curves for unconstrained training">
 </p>
 
 ```
@@ -106,7 +106,7 @@ axes.grid(True, zorder=2)
 plt.show()
 ```
 <p align="left">
-  <img src="Doc/loss_vs_iter_forward.png" width="400" title="Loss vs iteration for unconstrained training">
+  <img src="Doc/images/loss_vs_iter_forward.png" width="400" title="Loss vs iteration for unconstrained training">
 </p>
 
 ### **4.** Lockout Training: Option 1
@@ -161,7 +161,7 @@ df1 = lockout_forward.path_data
 df1.head()
 ```
 <p align="left">
-  <img src="Doc/path_data1.png" width="900" title="Path data for lockout training">
+  <img src="Doc/images/path_data1.png" width="900" title="Path data for lockout training">
 </p>
 
 Test accuracy can be computed using the models previously trained.
@@ -176,7 +176,7 @@ print("Test R2 (unconstrained) = {:.3f}".format(r2_test_forward))
 print("Test R2 (lockout)       = {:.3f}".format(r2_test_lockout1))
 ```
 <p align="left">
-  <img src="Doc/r2_test1.png" width="280" title="Test R2">
+  <img src="Doc/images/r2_test1.png" width="280" title="Test R2">
 </p>
 
 Feature importance can be computed and graphed.
@@ -201,7 +201,7 @@ axes.grid(True, zorder=1)
 plt.show()
 ```
 <p align="left">
-  <img src="Doc/feature_importance_lockout1.png" width="500" title="feature importance with lockout">
+  <img src="Doc/images/feature_importance_lockout1.png" width="500" title="feature importance with lockout">
 </p>
 
 ### **5.** Lockout Training: Option 2
@@ -262,7 +262,7 @@ axes.grid(True, zorder=1)
 plt.show()
 ``` 
 <p align="left">
-  <img src="Doc/feature_importance_lockout2a.png" width="500" title="feature importance with lockout">
+  <img src="Doc/images/feature_importance_lockout2a.png" width="500" title="feature importance with lockout">
 </p>
 
 Alternatively, the discrete set of t<sub>0</sub> values can be generated internally, in which case they are linearly sampled.<br>
@@ -343,7 +343,7 @@ print("Test R2 (unconstrained) = {:.3f}".format(r2_test_forward))
 print("Test R2 (lockout)       = {:.3f}".format(r2_test_lockout3))
 ```
 <p align="left">
-  <img src="Doc/r2_test3.png" width="280" title="Test R2">
+  <img src="Doc/images/r2_test3.png" width="280" title="Test R2">
 </p>
 
 ```
@@ -368,7 +368,7 @@ axes.grid(True, zorder=1)
 plt.show()
 ```
 <p align="left">
-  <img src="Doc/feature_importance_lockout3.png" width="500" title="feature importance with lockout">
+  <img src="Doc/images/feature_importance_lockout3.png" width="500" title="feature importance with lockout">
 </p>
 
 ### **7.** Lockout Training: Option 4
@@ -395,7 +395,7 @@ df4 = lockout_option4.path_data
 df4.tail()
 </pre></code>
 <p align="left">
-  <img src="Doc/path_data4.png" width="900" title="Path data for lockout training">
+  <img src="Doc/images/path_data4.png" width="900" title="Path data for lockout training">
 </p>
 
 
@@ -404,7 +404,7 @@ df4.tail()
 https://arxiv.org/abs/2107.07160
 
 <p align="left">
-  <img src="Doc/abstract.png" width="900" title="paper abstract">
+  <img src="Doc/images/abstract.png" width="900" title="paper abstract">
 </p>
 
 <!-- **Abstract:** Regularized regression and classification procedures attempt to fit a function $f(\bm{x}, \bm{\omega})$ of multiple predictor variables $\bm{x}$, to data $\{\bm{x}_i, \bm{y}_i\}^N_i$, based on some loss criterion $L(y,f)$ but adding a constraint $P(\bm{\omega})\le t_0$ on the joint values of the parameters $\bm{\omega}$ to improve accuracy. While there are efficient methods for finding solutions for all values of $t_0 \ge 0$ with some constraints $P$ in the special case that $f$ is a linear function, none exist for non linear functions such as Neural Networks (NN). Here we present a fast algorithm that provides all such solutions for any differentiable function $f$ and loss $L$, and any constraint $P$ that is an increasing monotone function of the absolute value of each parameter. Applications involving sparsity inducing regularization of arbitrary neural networks are discussed. Empirical results indicate that these sparse solutions are usually superior to their dense counterparts in both accuracy and interpretability. This improvement in accuracy can often make neural networks competitive with, and some times superior to, state of the art methods in the analysis of tabular data. -->
